@@ -5,6 +5,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -206,10 +207,18 @@ func MkdirIfNotExists(dirname string, perm os.FileMode) error {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Fatal(fmt.Errorf(`You must set only one argument (= author name of the blog)`))
+	if len(os.Args) != 3 && len(os.Args) != 2 {
+		log.Fatal(fmt.Errorf(`You must set only one or two argument (= name of the blog (required), number of pages to read (optional))`))
 	}
 	author := os.Args[1]
+	var err error
+	var maxnum float64 = math.Inf(0)
+	if len(os.Args) == 3 {
+		maxnum, err = strconv.ParseFloat(os.Args[2], 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	entries, err := GetEntries(author)
 	if err != nil {
@@ -228,7 +237,10 @@ func main() {
 	}
 
 	// Save images
-	for _, entry := range entries {
+	for cntpage, entry := range entries {
+		if float64(cntpage) > maxnum {
+			break
+		}
 		// get image urls
 		images, err := entry.Images()
 		if err != nil {
